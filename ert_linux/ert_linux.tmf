@@ -277,7 +277,7 @@ endif
 
 #-------------------------- Additional Libraries ------------------------------
 
-SYSLIBS = $(EXT_LIB)
+SYSLIBS = $(EXT_LIB) -lrt -lpthread
 ifeq ($(SFCN),0)
 SYSLIBS += -lm
 endif
@@ -614,3 +614,7 @@ rtwlib.ln : $(MAKEFILE) rtw_proj.tmw
 
 
 # EOF: ert_unix.tmf
+
+# Local Variables:
+# mode: makefile-gmake
+# End:
