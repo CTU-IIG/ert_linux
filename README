@@ -1,0 +1,20 @@
+Mimimalistic Simulink Coder Target for Linux
+============================================
+
+The aim of this target is to allow Simmulink to generate code that
+runs in real-time on Linux. This target tries to be minimalistic in
+the sense that it reuses as much as possible from Simulink built-in
+targets.
+
+
+Installation
+------------
+
+In Matlab prompt execute:
+
+  cd <root>/ert_linux/ert_linux
+  ert_linux_setup
+
+From now on, Code Generation pane of Simulink Model Configuration
+Parameters should offer ert_linux.tlc as System Target File (after
+pressing "Browse...." button).
