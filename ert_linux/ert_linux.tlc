@@ -41,6 +41,8 @@
   %----------------------------------------%
 
   rtwgensettings.BuildDirSuffix = '_ert_linux';
+  rtwgensettings.Version = '1';
+  rtwgensettings.SelectCallback = 'ert_linux_select_callback_handler(hDlg, hSrc)';
 
   END_RTW_OPTIONS
  %/
