@@ -44,7 +44,7 @@
 /%     %include "linux_ert_target_singletasking_main.tlc" %/
 /% %else %/
 %% Multi-tasking
-    %include "linux_ert_target_multitasking_main.tlc"
+    %include "ert_linux_multitasking_main.tlc"
 /% %endif %/
 
 %openfile buff
