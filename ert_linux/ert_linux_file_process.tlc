@@ -1,114 +1,65 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% $RCSfile: example_file_process.tlc,v $
-%% $Revision: 1.1.6.5 $
-%% $Date: 2010/09/13 16:20:21 $
 %%
-%% Abstract:
-%%   Example Embedded Coder custom file processing template.
+%% linux_ert_target_generate_main.tlc
 %%
-%%   Note: This file can contain any valid TLC code, which Embedded Coder
-%%   executes just prior to writing the generated source files to disk.
-%%   Using this template "hook" file, you are able to augment the generated
-%%   source code and create additional files.
+%% description:
+%%  TLC script which generates ert_main function according
+%%  to the number of model tasks and bitrates.
 %%
-%% Copyright 1994-2010 The MathWorks, Inc.
+%% date: 2nd Feb 2009
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%selectfile NULL_FILE
+%% author: Lukas Hamacek
+%% e-mail: hamacl1@fel.cvut.cz
+%% Department of Control Engineering
+%% Faculty of Electrical Engineering
+%% Czech Technical University in Prague
+%%
+%% modifications:
+%%  2009/2/2 - Lukas Hamacek
+%%      creation of the file
+%%
+%%  2009/4/18 - Lukas Hamacek
+%%      asynchronous sample times checked and removed from generation
+%%
 
-%%  Uncomment this TLC line to execute the example
-%%   ||   ||
-%%   ||   ||
-%%   \/   \/
-%%  %assign ERTCustomFileTest = TLC_TRUE
+%assign ert_mainC = LibCreateSourceFile("Source", "Custom", "ert_main")
 
-%if EXISTS("ERTCustomFileTest") && ERTCustomFileTest == TLC_TRUE
-  
-  %% Need to set the template compliance flag before you can use the API
-  %<LibSetCodeTemplateComplianceLevel(1)>
+%assign ::modelName = CompiledModel.Name
+%assign ::solverMode = CompiledModel.FixedStepOpts.SolverMode
+%assign ::fundamentalStepSize = CompiledModel.FundamentalStepSize
+%assign ::numSampleTimes = CompiledModel.NumSynchronousSampleTimes
+%assign ::extMode = CompiledModel.ConfigSet.ExtMode
 
-  %% Add a new C file timestwo.c and put a simple function in it
-  
-  %assign cFile = LibCreateSourceFile("Source", "Custom", "timestwo")
-  
-  %openfile tmwtypesBuf
-  
-  #include "tmwtypes.h"
-  
-  %closefile tmwtypesBuf
-  
-  %<LibSetSourceFileSection(cFile,"Includes",tmwtypesBuf)>
+%% parse sample times and offsets
+%assign j = 0
+%foreach i = CompiledModel.NumSampleTimes
+    %if CompiledModel.SampleTime[i].Asynchronous == "no"
+        %assign ::sampleTime%<j> = CompiledModel.SampleTime[i].PeriodAndOffset[0]
+        %assign ::offset%<j> = CompiledModel.SampleTime[i].PeriodAndOffset[1]
+        %assign j = j+1
+    %endif
+%endforeach
 
-  %openfile tmpBuf
-
-  /* Times two function */
-  real_T timestwofcn(real_T input) {
-    return (input * 2.0);
-  }
-
-  %closefile tmpBuf
-  
-  %<LibSetSourceFileSection(cFile,"Functions",tmpBuf)>
-  
-  %% Add a corresponding H file timestwo.h
-  
-  %assign hFile = LibCreateSourceFile("Header", "Custom", "timestwo")
-  
-  %openfile tmpBuf
-  
-  /* Times two function */
-  extern real_T timestwofcn(real_T input);
-  
-  %closefile tmpBuf
-  
-  %<LibSetSourceFileSection(hFile,"Includes",tmwtypesBuf)>
-  %<LibSetSourceFileSection(hFile,"Declarations",tmpBuf)>
-  
-  %% Add a #define to the model's public header file model.h
-  
-  %assign pubName = LibGetMdlPubHdrBaseName()
-  %assign modelH  = LibCreateSourceFile("Header", "Simulink", pubName)
-  
-  %openfile tmpBuf
-
-  #define ACCELERATION 9.81
-
-  %closefile tmpBuf
-  
-  %<LibSetSourceFileSection(modelH,"Defines",tmpBuf)>
-  
-  %% Add a #define to the model's private header file model_private.h
-  
-  %assign prvName  = LibGetMdlPrvHdrBaseName()
-  %assign privateH = LibCreateSourceFile("Header", "Simulink", prvName)
-  
-  %openfile tmpBuf
-
-  #define STARTING_POINT 100.0
-
-  %closefile tmpBuf
-  
-  %<LibSetSourceFileSection(privateH,"Defines",tmpBuf)>
-  
-  %% Add a #include to the model's C file model.c
-  
-  %assign srcName = LibGetMdlSrcBaseName()
-  %assign modelC  = LibCreateSourceFile("Source", "Simulink", srcName)
-  
-  %openfile tmpBuf
-  /* #include "mytables.h" */
-  %closefile tmpBuf
-  
-  %<LibSetSourceFileSection(modelC,"Includes",tmpBuf)>
-  
-  %% Create a simple main.  Files are located in MATLAB/rtw/c/tlc/mw.
-  
-  %if LibIsSingleRateModel() || LibIsSingleTasking()
-    %include "bareboard_srmain.tlc"
-    %<FcnSingleTaskingMain()>
-  %else
-    %include "bareboard_mrmain.tlc"
-    %<FcnMultiTaskingMain()>
-  %endif
-  
+%% Single-tasking
+%if solverMode == "SingleTasking"
+    %include "linux_ert_target_singletasking_main.tlc"
+%else
+%% Multi-tasking
+    %include "linux_ert_target_multitasking_main.tlc"
 %endif
+
+%openfile buff
+%<generateDeclarations()>
+%closefile buff
+%<LibSetSourceFileSection(ert_mainC, "Declarations", buff)>
+
+%openfile buff
+%<generateRtOneStep()>
+%<generateMain()>
+%closefile buff
+%<LibSetSourceFileSection(ert_mainC, "Functions", buff)>
+
+
+%include "logger.tlc"
+%<generateLogger()>
+
+%% [EOF] linux_ert_target_generate_main.tlc
