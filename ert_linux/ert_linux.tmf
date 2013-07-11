@@ -398,7 +398,7 @@ USER_OBJS       = $(addsuffix .o, $(basename $(USER_SRCS)))
 LOCAL_USER_OBJS = $(notdir $(USER_OBJS))
 
 OBJS      = $(addsuffix .o, $(basename $(SRCS))) $(USER_OBJS)
-LINK_OBJS = $(addsuffix .o, $(basename $(SRCS))) $(LOCAL_USER_OBJS)
+LINK_OBJS = $(sort $(addsuffix .o, $(basename $(SRCS))) $(LOCAL_USER_OBJS))
 
 SHARED_SRC := $(wildcard $(SHARED_SRC))
 SHARED_OBJS_NO_PATH = $(addsuffix .o, $(basename $(notdir $(SHARED_SRC))))
