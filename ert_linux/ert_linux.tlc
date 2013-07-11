@@ -32,6 +32,7 @@
 %include "commontargetlib.tlc"
 
 %include "codegenentry.tlc"
+%include "ert_linux_genfiles.tlc"
 
 /%
   BEGIN_RTW_OPTIONS
