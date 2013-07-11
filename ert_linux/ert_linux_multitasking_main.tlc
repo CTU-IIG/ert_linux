@@ -140,13 +140,8 @@
     int_T i;
 
     %if extMode == 1
-      /* External mode */
-      rtSetTFinalForExtMode(&rtmGetTFinal(RT_MDL));
-      rtExtModeCheckInit(NUMST);
-      rtExtModeWaitForStartPkt(rtmGetRTWExtModeInfo(RT_MDL), NUMST, (boolean_T *)&rtmGetStopRequested(RT_MDL));
+      %<SLibGenERTExtModeInit()>
     %endif
-
-    (void)printf("\n** starting the model **\n");
 
     clock_gettime(CLOCK_MONOTONIC, &next);
 
