@@ -15,6 +15,8 @@
   %assign AutoBuildProcedure = !GenerateSampleERTMain
 %endif
 
+%assign RateBasedStepFcn = 1 	/% Generate only rate-based step functions %/
+
 %% The model_SetEventsForThisBaseRate function is not required for the
 %% VxWorks environment, i.e., when using an operating system.
 %assign SuppressSetEventsForThisBaseRateFcn = (TargetOS == "VxWorksExample") 

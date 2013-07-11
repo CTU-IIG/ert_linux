@@ -7,7 +7,7 @@
 %%
 %% date: 3nd Feb 2009
 %%
-%% author: Lukas Hamacek
+%% author: Lukas Hamacek, Michal Sojka
 %% e-mail: hamacl1@fel.cvut.cz
 %% Department of Control Engineering
 %% Faculty of Electrical Engineering
@@ -21,47 +21,74 @@
 %% GENERATEDECLARATIONS
 %%  This function generates main function declarations.
 %%
+
+%assign ::tid01Eq = LibGetTID01EQ()
+
 %function generateDeclarations() Output
 
   /* Multirate - Multitasking case main file */
-
+  #define _POSIX_C_SOURCE 199309L        /* For clock_gettime() */
   #include <stdio.h>                     /* This ert_main.c example uses printf/fflush */
   #include <pthread.h>                   /* Thread library header file */
   #include <sched.h>                     /* OS scheduler header file */
   #include <semaphore.h>                 /* Semaphores library header file */
-  #include "pthread_periodic.h"          /* Periodic threads library header file*/
+  #include <time.h>
+  #include <stdlib.h>
   #include "%<modelName>.h"              /* Model's header file */
   #include "rtwtypes.h"                  /* MathWorks types */
   %if extMode == 1
     #include "ext_work.h"                  /* External mode header file */
   %endif
 
-  /**
-   * Maximal priority used by main loop thread.
-   */
-  #define MAX_PRIO sched_get_priority_max(SCHED_FIFO) - 4
+  /*==================*
+   * Required defines *
+   *==================*/
+
+  #ifndef MODEL
+  # error Must specify a model name.  Define MODEL=name.
+  #else
+  /* create generic macros that work with any model */
+  # define EXPAND_CONCAT(name1,name2) name1 ## name2
+  # define CONCAT(name1,name2) EXPAND_CONCAT(name1,name2)
+  # define MODEL_INITIALIZE CONCAT(MODEL,_initialize)
+  # define MODEL_STEP       CONCAT(MODEL,_step)
+  # define MODEL_TERMINATE  CONCAT(MODEL,_terminate)
+  # define RT_MDL           CONCAT(MODEL,_M)
+  #endif
+
+  /* Error checking */
+  #define STRINGIZE(num) #num
+  #define POS(line) __FILE__ ":" STRINGIZE(line)
+  #define CHECK0(expr) do { int __err = (expr); if (__err) { fprintf(stderr, "Error: %s returned '%s' at " POS(__LINE__) "\n", #expr, strerror(__err)); exit(1); } } while (0);
+  #define CHECKE(expr) do { if ((expr) == -1) { perror(#expr " at " POS(__LINE__)); exit(1); } } while (0);
 
   /**
-   * Thread handler of the main loop thread.
+   * Maximal priority used by base rate thread.
+   */
+  #define MAX_PRIO (sched_get_priority_min(SCHED_FIFO) + %<numSampleTimes>)
+
+  /**
+   * Thread handle of the base rate thread.
    * Fundamental sample time = %<fundamentalStepSize>s
    */
-  pthread_t main_loop_thread;
+  pthread_t base_rate_thread;
 
+  /**
+   * Thread handles of and semaphores for sub rate threads. The array
+   * is indexed by TID, i.e. the first one or two elements are unused.
   %foreach i = numSampleTimes
+      %if i == 0 || i == 1 && tid01Eq
+      %continue
+    %endif
     %assign s = sampleTime%<i>
     %assign o = offset%<i>
-
-    /**
-     * Thread handler of the sample time %<i> loop thread.
-     * Sample time = %<s>s, offset = %<o>s
-     */
-    pthread_t rt_OneStep%<i>_thread;
-
-    /**
-     * Semaphore used to suspend rt_OneStep%<i> loop until next simulation step.
-     */
-    sem_t step%<i>_semaphore;
+   * TID%<i>: sample time = %<s>s, offset = %<o>s
   %endforeach
+   */
+  struct sub_rate {
+  pthread_t thread;
+  sem_t     sem;
+  } sub_rate[%<numSampleTimes>];
 
   /**
    * Flag if the simulation has been terminated.
@@ -70,36 +97,23 @@
 
 %endfunction
 
-
-%% GENERATERTONESTEP
-%%  This function generates code of rt_OneStep function.
-%%
 %function generateRtOneStep() Output
-
-  %foreach i = numSampleTimes
-    %assign s = sampleTime%<i>
-    %assign o = offset%<i>
-
-    /**
-     * This is thread function of the simulation one step cycle.
-     * Sample time = %<s>s, offset = %<o>s
-     */
-    void * rt_OneStep%<i>()
+  %foreach j = numSampleTimes - 1
+    %assign i = j + 1
+    %if i == 1 && tid01Eq
+      %continue
+    %endif
+    void *sub_rate%<i>(void *arg)
     {
-        /* Setting up the pririty of the sample time loop */
-        struct sched_param scheduling_parameters;
-        scheduling_parameters.sched_priority = MAX_PRIO - 1 - %<i>;
-        if (0 != pthread_setschedparam(pthread_self(), SCHED_FIFO, &scheduling_parameters))
-        {
-            %%log_message("[ERROR] Failed to set sample time thread priority, Login as root and start again.", VERBOSEL);
-            printf("[ERROR] Failed to set the loop %<i> thread priority. Login as root and start again.\n");
-        }
-
-        while(!simulationFinished) {
-            sem_wait(&step%<i>_semaphore);    /* sem_val = 1 */
-            %<modelName>_step%<i>();
-            sem_wait(&step%<i>_semaphore);    /* sem_val = 0 */
-        }
+      while(!simulationFinished) {
+	sem_wait(&sub_rate[%<i>].sem);    /* sem_val = 1 */
+	printf("%s\n", __func__);
+	%<modelName>_step%<i>();
+	%if extMode == 1
+          rtExtModeUpload(%<i>, %<RTMGetTaskTimeForTID(i)>);
+	%endif
+	sem_wait(&sub_rate[%<i>].sem);    /* sem_val = 0 */
+      }
     }
   %endforeach
 %endfunction
@@ -109,77 +123,97 @@
 %%  This function generates code of the main function function.
 %%
 %function generateMain() Output
-
   /**
    * This is the thread function of the main loop.
    * Fundamental sample time = %<fundamentalStepSize>s
    */
-  void * main_loop()
+  void * base_rate()
   {
-    struct timespec start;
-    struct timespec period;
+    %assign  sec = FEVAL("uint32", fundamentalStepSize)
+    %assign nsec = FEVAL("uint32", (fundamentalStepSize - FEVAL("floor", fundamentalStepSize))*1000000000)
+    struct timespec now, next;
+    struct timespec period = { %<sec>, %<nsec> }; /* %<fundamentalStepSize> seconds */
     boolean_T eventFlags[%<numSampleTimes>];             /* Model has %<numSampleTimes> rates */
+    int_T taskCounter[%<numSampleTimes>] = %<FcnInitializeTaskCounter()>;
+    int_T OverrunFlags[%<numSampleTimes>];
+    int step_sem_value;
     int_T i;
 
-    /* Setting up the pririty of the main loop */
-       struct sched_param scheduling_parameters;
-       scheduling_parameters.sched_priority = sched_get_priority_max(SCHED_FIFO) - 4;
-    if (0 != pthread_setschedparam(pthread_self(), SCHED_FIFO, &scheduling_parameters))
-    {
-      %%log_message("[ERROR] Failed to set main thread priority, Login as root and start again", VERBOSEL);
-      printf("[ERROR] Failed to set main thread priority. Login as root and start again.\n");
-    }
+    %if extMode == 1
+      /* External mode */
+      rtSetTFinalForExtMode(&rtmGetTFinal(RT_MDL));
+      rtExtModeCheckInit(NUMST);
+      rtExtModeWaitForStartPkt(rtmGetRTWExtModeInfo(RT_MDL), NUMST, (boolean_T *)&rtmGetStopRequested(RT_MDL));
+    %endif
 
-    period.tv_sec = (unsigned long long)%<fundamentalStepSize>;
-    period.tv_nsec = (unsigned long long)((%<fundamentalStepSize>-period.tv_sec)*1000000000);
+    (void)printf("\n** starting the model **\n");
 
-    clock_gettime(CLOCK_REALTIME, &start);
-    pthread_make_periodic_np(pthread_self(), &start, &period);
-
-    int step_sem_value;
+    clock_gettime(CLOCK_MONOTONIC, &next);
 
     /* Main loop, running until all the threads are terminated */
     while(rtmGetErrorStatus(%<modelName>_M) == NULL && !rtmGetStopRequested(%<modelName>_M)) {
-      pthread_wait_np();
-      %<modelName>_SetEventsForThisBaseStep(eventFlags);
+      printf("%s\n", __func__);
+      /* Check subrate overrun, set rates that need to run this time step*/
+      %<LibCallSetEventForThisBaseStep("eventFlags")>\
 
-      /* Base sampling rate */
-      sem_getvalue(&step0_semaphore, &step_sem_value);
-      if(step_sem_value) {
-	rtmSetErrorStatus(%<modelName>_M, "Overrun");
-	printf("Loop 0 overrun, sample time=%<sampleTime0>s, offset=%<offset0>s is too fast\n");
-	break;
-      }
-      sem_post(&step0_semaphore);
-      sem_post(&step0_semaphore);
-
-      %foreach i = numSampleTimes-1
-	%assign s = sampleTime%<i+1>
-	%assign o = offset%<i+1>
-	/* Sampling rate %<i+1>, sample time = %<s>, offset = %<o> */
-	if (eventFlags[%<i+1>]) {
-	  sem_getvalue(&step%<i+1>_semaphore, &step_sem_value);
-	  if(step_sem_value) {
+      %foreach i = numSampleTimes
+	%if i == 0 || i == 1 && tid01Eq
+	  %continue
+	%endif
+	%assign s = sampleTime%<i>
+	%assign o = offset%<i>
+	/* Sampling rate %<i>, sample time = %<s>, offset = %<o> */
+	if (eventFlags[%<i>]) {
+	  eventFlags[%<i>] = FALSE;
+	  sem_getvalue(&sub_rate[%<i>].sem, &step_sem_value);
+	  if (step_sem_value) {
 	    rtmSetErrorStatus(%<modelName>_M, "Overrun");
-	    printf("Loop %<i+1> overrun, sample time=%<s>s, offset=%<o>s is too fast\n");
+	    printf("Sub rate %<i> overrun, sample time=%<s>s, offset=%<o>s is too fast\n");
 	    break;
 	  }
-	  sem_post(&step%<i+1>_semaphore);
-	  sem_post(&step%<i+1>_semaphore);
+	  sem_post(&sub_rate[%<i>].sem);
+	  sem_post(&sub_rate[%<i>].sem);
 	}
       %endforeach
 
       %if extMode == 1
+        /* external mode */
+	rtExtModeUpload(0, %<RTMGetTaskTimeForTID(0)>);
+	%if tid01Eq
+	  rtExtModeUpload(1, %<RTMGetTaskTimeForTID(1)>);
+	%endif
+
 	rtExtModeCheckEndTrigger();
+        rtExtModePauseIfNeeded(rtmGetRTWExtModeInfo(RT_MDL),
+                               NUMST,
+                               (boolean_T *)&rtmGetStopRequested(RT_MDL));
+        rtExtModeOneStep(rtmGetRTWExtModeInfo(RT_MDL),
+                         NUMST,
+                         (boolean_T *)&rtmGetStopRequested(RT_MDL));
       %endif
+
+      next.tv_sec += period.tv_sec;
+      next.tv_nsec += period.tv_nsec;
+      if (next.tv_nsec >= 1000000000) {
+	next.tv_sec++;
+	next.tv_nsec -= 1000000000;
+      }
+      clock_gettime(CLOCK_MONOTONIC, &now);
+      if (now.tv_sec > next.tv_sec ||
+          (now.tv_sec == next.tv_sec && now.tv_nsec > next.tv_nsec)) {
+	    uint64_T nsec = (now.tv_sec - next.tv_sec) * 1000000000 + now.tv_nsec - next.tv_nsec;
+	    fprintf(stderr, "Base rate (%<s>s) overrun by %d us\n", (int)(nsec/1000));
+      }
+      clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, NULL);
+
     }
 
     simulationFinished = 1;
     /* Final step */
-    %foreach i = numSampleTimes
-      sem_post(&step%<i>_semaphore);
-      sem_post(&step%<i>_semaphore);
-    %endforeach
+    for (i = %<1 + tid01Eq>; i < %<numSampleTimes>; i++) {
+      sem_post(&sub_rate[i].sem);
+      sem_post(&sub_rate[i].sem);
+    }
   }
 
   /**
@@ -188,6 +222,11 @@
    */
   int_T main(int_T argc, const char_T *argv[])
   {
+    const char_T *errStatus;
+    int_T i;
+    pthread_attr_t attr;
+    struct sched_param sched_param;
+
     %if extMode == 1
       /* External mode */
       rtERTExtModeParseArgs(argc, argv);
@@ -196,40 +235,50 @@
       (void *)(argv);
     %endif
 
-    /* Initialize periodic thread library */
-    pthread_periodic_init_np();
-
     /* Initialize model */
-    %<modelName>_initialize(1);
+    %<modelName>_initialize();
     simulationFinished = 0;
 
+    CHECK0(pthread_attr_init(&attr));
+    CHECK0(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED));
+    CHECK0(pthread_attr_setschedpolicy(&attr, SCHED_FIFO));
+
     %foreach i = numSampleTimes
+      %if i == 0 || i == 1 && tid01Eq
+	%continue
+      %endif
       %assign s = sampleTime%<i>
       %assign o = offset%<i>
 
-      /* Initializing the step semaphore of the loop %<i>*/
-      if(sem_init(&step%<i>_semaphore, 0, 0) < 0) {
-	printf("[ERROR] Step semaphore %<i> initialization failed!\n");
-	%%log_message("[ERROR] Step semaphore %<i> initialization failed", VERBOSEL);
-	return(1);
-      }
+      /* Initializing the step semaphore of the loop %<i> */
+      CHECKE(sem_init(&sub_rate[%<i>].sem, 0, 0));
 
       /* Starting loop %<i> thread for sample time = %<s>s, offset = %<o>s. */
-      pthread_create(&rt_OneStep%<i>_thread, NULL, rt_OneStep%<i>, NULL);
+      sched_param.sched_priority = MAX_PRIO - %<i>;
+      CHECK0(pthread_attr_setschedparam(&attr, &sched_param));
+      CHECK0(pthread_create(&sub_rate[%<i>].thread, &attr, sub_rate%<i>, (void*)%<i>));
+
     %endforeach
 
     /* Starting the main loop */
-    pthread_create(&main_loop_thread, NULL, main_loop, NULL);
-    pthread_join(main_loop_thread, NULL);
+    sched_param.sched_priority = MAX_PRIO;
+    CHECK0(pthread_attr_setschedparam(&attr, &sched_param));
+    CHECK0(pthread_create(&base_rate_thread, &attr, base_rate, NULL));
+
+    /* Wait for threads to finish */
+    CHECK0(pthread_attr_destroy(&attr));
+    pthread_join(base_rate_thread, NULL);
     %foreach i = numSampleTimes
-      pthread_join(rt_OneStep%<i>_thread, NULL);
+      %if i == 0 || i == 1 && tid01Eq
+	%continue
+      %endif
+      pthread_join(sub_rate[%<i>].thread, NULL);
     %endforeach
 
     /* Terminate model */
     %<modelName>_terminate();
 
-    const char_T *errStatus = rtmGetErrorStatus(%<modelName>_M);
-    int_T i;
+    errStatus = rtmGetErrorStatus(%<modelName>_M);
     if(errStatus != NULL && strcmp(errStatus, "Simulation finished")) {
       %%printf("%s\n", rtmGetErrorStatus(%<modelName>_M));
       if(!strcmp(errStatus, "Overrun")) {
@@ -239,6 +288,9 @@
     }
     return 0;
   }
-%endfunction
 
-%% [EOF] linux_ert_target_miltitasking_main.tlc
+/* Local Variables: */
+/* compile-command: "make -f %<modelName>.mk" */
+/* End: */
+
+%endfunction

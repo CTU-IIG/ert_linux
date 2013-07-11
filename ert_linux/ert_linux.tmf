@@ -363,11 +363,6 @@ ifeq ($(SFCN),0)
           PRODUCT            = $(RELATIVE_PATH_TO_ANCHOR)/$(MODEL)
           BIN_SETTING        = $(LD) $(LDFLAGS) $(ADDITIONAL_LDFLAGS) -o $(PRODUCT)
           BUILD_PRODUCT_TYPE = "executable"
-          ifeq ($(GEN_SAMPLE_MAIN),0)
-            SRCS += rt_main.c
-          else
-            SRCS += ert_main.$(TARGET_LANG_EXT)
-          endif
         endif
       endif
     endif
