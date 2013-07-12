@@ -270,6 +270,10 @@
       pthread_join(sub_rate[%<i>].thread, NULL);
     %endforeach
 
+    %if extMode == 1
+      rtExtModeShutdown(%<numSampleTimes>);
+    %endif
+
     /* Terminate model */
     %<modelName>_terminate();
 
