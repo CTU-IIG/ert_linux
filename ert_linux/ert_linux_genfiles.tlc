@@ -1,6 +1,5 @@
 /% Copy my custom version of ext_svr (for debugging) %/
-%openfile ext_svr="ext_svr.c"
-%selectfile ext_svr
-/* Ahoj */
-%include "ext_svr.c"
-%closefile ext_svr
+/% %openfile ext_svr="ext_svr.c" %/
+/% %selectfile ext_svr %/
+/% %include "ext_svr.c" %/
+/% %closefile ext_svr %/
