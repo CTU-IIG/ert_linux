@@ -34,6 +34,7 @@
   #include <semaphore.h>                 /* Semaphores library header file */
   #include <time.h>
   #include <stdlib.h>
+  #include <unistd.h>
   #include "%<modelName>.h"              /* Model's header file */
   #include "rtwtypes.h"                  /* MathWorks types */
   %if extMode == 1
@@ -178,9 +179,6 @@
 
       %if extMode == 1
 	rtExtModeCheckEndTrigger();
-        rtExtModeOneStep(rtmGetRTWExtModeInfo(RT_MDL),
-                         NUMST,
-                         (boolean_T *)&rtmGetStopRequested(RT_MDL));
       %endif
 
       next.tv_sec += period.tv_sec;
@@ -255,9 +253,17 @@
     sched_param.sched_priority = MAX_PRIO;
     CHECK0(pthread_attr_setschedparam(&attr, &sched_param));
     CHECK0(pthread_create(&base_rate_thread, &attr, base_rate, NULL));
+    CHECK0(pthread_attr_destroy(&attr));
+
+    %if extMode == 1
+      /* External mode */
+      while(rtmGetErrorStatus(%<modelName>_M) == NULL && !rtmGetStopRequested(%<modelName>_M)) {
+        rtExtModeOneStep(rtmGetRTWExtModeInfo(RT_MDL), NUMST, (boolean_T *)&rtmGetStopRequested(RT_MDL));
+	usleep(%<FEVAL("uint32", fundamentalStepSize * 1000000)>);
+      }
+    %endif
 
     /* Wait for threads to finish */
-    CHECK0(pthread_attr_destroy(&attr));
     pthread_join(base_rate_thread, NULL);
     %foreach i = numSampleTimes
       %if i == 0 || i == 1 && tid01Eq
