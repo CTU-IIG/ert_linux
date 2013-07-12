@@ -97,6 +97,10 @@
 
 %endfunction
 
+%function printfunc() Output
+  /% printf("%s\n", __func__); %/
+%endfunction
+
 %function generateRtOneStep() Output
   %foreach j = numSampleTimes - 1
     %assign i = j + 1
@@ -107,11 +111,8 @@
     {
       while(!simulationFinished) {
 	sem_wait(&sub_rate[%<i>].sem);    /* sem_val = 1 */
-	printf("%s\n", __func__);
+	%<printfunc()>
 	%<modelName>_step%<i>();
-	%if extMode == 1
-          rtExtModeUpload(%<i>, %<RTMGetTaskTimeForTID(i)>);
-	%endif
 	sem_wait(&sub_rate[%<i>].sem);    /* sem_val = 0 */
       }
     }
@@ -147,10 +148,11 @@
 
     /* Main loop, running until all the threads are terminated */
     while(rtmGetErrorStatus(%<modelName>_M) == NULL && !rtmGetStopRequested(%<modelName>_M)) {
-      printf("%s\n", __func__);
+      %<printfunc()>
       /* Check subrate overrun, set rates that need to run this time step*/
       %<LibCallSetEventForThisBaseStep("eventFlags")>\
 
+      /* Trigger sub-rate threads */
       %foreach i = numSampleTimes
 	%if i == 0 || i == 1 && tid01Eq
 	  %continue
@@ -171,17 +173,11 @@
 	}
       %endforeach
 
-      %if extMode == 1
-        /* external mode */
-	rtExtModeUpload(0, %<RTMGetTaskTimeForTID(0)>);
-	%if tid01Eq
-	  rtExtModeUpload(1, %<RTMGetTaskTimeForTID(1)>);
-	%endif
+      /* Execute base rate step */
+      %<modelName>_step0();
 
+      %if extMode == 1
 	rtExtModeCheckEndTrigger();
-        rtExtModePauseIfNeeded(rtmGetRTWExtModeInfo(RT_MDL),
-                               NUMST,
-                               (boolean_T *)&rtmGetStopRequested(RT_MDL));
         rtExtModeOneStep(rtmGetRTWExtModeInfo(RT_MDL),
                          NUMST,
                          (boolean_T *)&rtmGetStopRequested(RT_MDL));
@@ -197,7 +193,7 @@
       if (now.tv_sec > next.tv_sec ||
           (now.tv_sec == next.tv_sec && now.tv_nsec > next.tv_nsec)) {
 	    uint64_T nsec = (now.tv_sec - next.tv_sec) * 1000000000 + now.tv_nsec - next.tv_nsec;
-	    fprintf(stderr, "Base rate (%<s>s) overrun by %d us\n", (int)(nsec/1000));
+	    fprintf(stderr, "Base rate (%<fundamentalStepSize>s) overrun by %d us\n", (int)(nsec/1000));
       }
       clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &next, NULL);
 
