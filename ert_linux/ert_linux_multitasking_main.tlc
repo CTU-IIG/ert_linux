@@ -1,21 +1,15 @@
 %%
-%% linux_ert_target_multitasking_main.tlc
 %%
 %% description:
-%%  This TLC script generates ert_main for multi-rate / multi-tasking
+%%  This TLC script generates ert_main.c
 %%  case.
 %%
-%% date: 3nd Feb 2009
+%% authors: Michal Sojka <sojkam1@fel.cvut.cz>
+%%          Lukas Hamacek <hamacl1@fel.cvut.cz>
 %%
-%% author: Lukas Hamacek, Michal Sojka
-%% e-mail: hamacl1@fel.cvut.cz
 %% Department of Control Engineering
 %% Faculty of Electrical Engineering
 %% Czech Technical University in Prague
-%%
-%% modifications:
-%%  2009/2/3 - Lukas Hamacek
-%%      creation of the file
 %%
 
 %% GENERATEDECLARATIONS
