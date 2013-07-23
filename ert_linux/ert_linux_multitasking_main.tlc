@@ -126,7 +126,7 @@
 %%
 %function generateMain() Output
   /**
-   * This is the thread function of the main loop.
+   * This is the thread function of the base rate loop.
    * Fundamental sample time = %<fundamentalStepSize>s
    */
   void * base_rate()
@@ -228,6 +228,7 @@
     %<modelName>_initialize();
     simulationFinished = 0;
 
+    /* Prepare task attributes */
     CHECK0(pthread_attr_init(&attr));
     CHECK0(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED));
     CHECK0(pthread_attr_setschedpolicy(&attr, SCHED_FIFO));
@@ -249,7 +250,7 @@
 
     %endforeach
 
-    /* Starting the main loop */
+    /* Starting the base rate thread */
     sched_param.sched_priority = MAX_PRIO;
     CHECK0(pthread_attr_setschedparam(&attr, &sched_param));
     CHECK0(pthread_create(&base_rate_thread, &attr, base_rate, NULL));
