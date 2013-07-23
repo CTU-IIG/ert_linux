@@ -39,13 +39,8 @@
     %endif
 %endforeach
 
-%% Single-tasking
-/% %if solverMode == "SingleTasking" %/
-/%     %include "linux_ert_target_singletasking_main.tlc" %/
-/% %else %/
-%% Multi-tasking
-    %include "ert_linux_multitasking_main.tlc"
-/% %endif %/
+%% Generate ert_main.c
+%include "ert_linux_main.tlc"
 
 %openfile buff
 %<generateDeclarations()>
@@ -57,5 +52,3 @@
 %<generateMain()>
 %closefile buff
 %<LibSetSourceFileSection(ert_mainC, "Functions", buff)>
-
-%% [EOF] linux_ert_target_generate_main.tlc
