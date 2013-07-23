@@ -27,7 +27,8 @@
 %function generateDeclarations() Output
 
   /* Multirate - Multitasking case main file */
-  #define _POSIX_C_SOURCE 199309L        /* For clock_gettime() */
+  #define _BSD_SOURCE		         /* For usleep() */
+  #define _POSIX_C_SOURCE 200112L        /* For clock_gettime() & clock_nanosleep() */
   #include <stdio.h>                     /* This ert_main.c example uses printf/fflush */
   #include <pthread.h>                   /* Thread library header file */
   #include <sched.h>                     /* OS scheduler header file */
