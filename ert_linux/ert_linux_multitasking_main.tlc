@@ -191,8 +191,8 @@
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	if (now.tv_sec > next.tv_sec ||
 	    (now.tv_sec == next.tv_sec && now.tv_nsec > next.tv_nsec)) {
-	  uint64_T nsec = (now.tv_sec - next.tv_sec) * 1000000000 + now.tv_nsec - next.tv_nsec;
-	  fprintf(stderr, "Base rate (%<fundamentalStepSize>s) overrun by %d us\n", (int)(nsec/1000));
+	  uint32_T usec = (now.tv_sec - next.tv_sec) * 1000000 + (now.tv_nsec - next.tv_nsec)/1000;
+	  fprintf(stderr, "Base rate (%<fundamentalStepSize>s) overrun by %d us\n", usec);
 	  next = now;
 	  continue;
 	}
