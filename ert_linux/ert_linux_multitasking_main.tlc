@@ -175,7 +175,11 @@
       %endforeach
 
       /* Execute base rate step */
-      %<modelName>_step0();
+      %if solverMode == "SingleTasking"
+	%<modelName>_step();
+      %else
+	%<modelName>_step0();
+      %endif
 
       %if extMode == 1
 	rtExtModeCheckEndTrigger();
