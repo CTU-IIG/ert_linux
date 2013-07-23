@@ -91,6 +91,10 @@
    */
   int simulationFinished = 0;
 
+  %if extMode == 1
+    /* Indication that the base rate thread has started */
+    sem_t ext_mode_ready;
+  %endif
 %endfunction
 
 %function printfunc() Output
@@ -138,6 +142,7 @@
 
     %if extMode == 1
       %<SLibGenERTExtModeInit()>
+      CHECKE(sem_post(&ext_mode_ready));
     %endif
 
     clock_gettime(CLOCK_MONOTONIC, &next);
@@ -222,6 +227,7 @@
     %if extMode == 1
       /* External mode */
       rtERTExtModeParseArgs(argc, argv);
+      CHECKE(sem_init(&ext_mode_ready, 0, 0));
     %else
       (void)(argc);
       (void *)(argv);
@@ -261,6 +267,7 @@
 
     %if extMode == 1
       /* External mode */
+      CHECKE(sem_wait(&ext_mode_ready));
       while(rtmGetErrorStatus(%<modelName>_M) == NULL && !rtmGetStopRequested(%<modelName>_M)) {
         rtExtModeOneStep(rtmGetRTWExtModeInfo(RT_MDL), NUMST, (boolean_T *)&rtmGetStopRequested(RT_MDL));
 	usleep(%<FEVAL("uint32", fundamentalStepSize * 1000000)>);
