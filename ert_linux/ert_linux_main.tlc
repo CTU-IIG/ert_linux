@@ -226,7 +226,8 @@
 
     %if extMode == 1
       /* External mode */
-      rtERTExtModeParseArgs(argc, argv);
+      /* rtERTExtModeParseArgs(argc, argv); */
+      rtExtModeParseArgs(argc, argv, NULL);
       CHECKE(sem_init(&ext_mode_ready, 0, 0));
     %else
       (void)(argc);
