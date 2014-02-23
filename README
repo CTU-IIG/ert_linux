@@ -1,5 +1,12 @@
 Mimimalistic Simulink Coder Target for Linux
 ============================================
+Authors: Michal Sojka <sojkam1@fel.cvut.cz>
+         Lukas Hamacek <hamacl1@fel.cvut.cz>
+
+Copyright (C) 2009 - 2014
+         Department of Control Engineering
+         Faculty of Electrical Engineering
+         Czech Technical University in Prague
 
 The aim of this target is to allow Simulink to generate code that
 runs in real-time on Linux. This target tries to be minimalist in
@@ -19,4 +26,19 @@ From now on, Code Generation pane of Simulink Model Configuration
 Parameters should offer ert_linux.tlc as System Target File (after
 pressing "Browse...." button).
 
-Note: This target was tested with Matlab R2012b.
+Documentation
+-------------
+
+Pinters to more ERT Linux target documentation can be found
+at the project SourceForge page
+
+  http://lintarget.sourceforge.net/
+
+The Michal Sojka blogpost about update of actual version
+can be found at
+
+  http://rtime.felk.cvut.cz/~sojka/blog/on-generating-linux-applications-from-simulink/
+
+Note: This target was tested with Matlab R2012b and R2013a
+      and Humusoft MF624 cards with Linux kernels up to 3.12 RT
+      on 64-bit Debian GNU/Linux system.
