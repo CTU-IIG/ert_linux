@@ -39,6 +39,13 @@ can be found at
 
   http://rtime.felk.cvut.cz/~sojka/blog/on-generating-linux-applications-from-simulink/
 
+Development sources repository
+------------------------------
+
+  http://rtime.felk.cvut.cz/gitweb/ert_linux.git
+
+  git clone git://rtime.felk.cvut.cz/ert_linux.git
+
 Note: This target was tested with Matlab R2012b and R2013a
       and Humusoft MF624 cards with Linux kernels up to 3.12 RT
       on 64-bit Debian GNU/Linux system.
