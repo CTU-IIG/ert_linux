@@ -30,6 +30,7 @@
   #include <time.h>
   #include <stdlib.h>
   #include <unistd.h>
+  #include <sys/mman.h>                  /* For mlockall() */
   #include "%<modelName>.h"              /* Model's header file */
   #include "rtwtypes.h"                  /* MathWorks types */
   %if extMode == 1
@@ -233,6 +234,8 @@
       (void)(argc);
       (void *)(argv);
     %endif
+
+    CHECKE(mlockall(MCL_FUTURE));
 
     /* Initialize model */
     %<modelName>_initialize();
