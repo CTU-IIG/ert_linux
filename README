@@ -29,15 +29,13 @@ pressing "Browse...." button).
 Documentation
 -------------
 
-Pinters to more ERT Linux target documentation can be found
-at the project SourceForge page
 
-  http://lintarget.sourceforge.net/
 
-The Michal Sojka blogpost about update of actual version
-can be found at
+Pointers to more ERT Linux target documentation can be found at the
+project SourceForge page http://lintarget.sourceforge.net/.
 
-  http://rtime.felk.cvut.cz/~sojka/blog/on-generating-linux-applications-from-simulink/
+Michal Sojka's blogpost about the actual version can be found at
+http://rtime.felk.cvut.cz/~sojka/blog/on-generating-linux-applications-from-simulink/.
 
 Development sources repository
 ------------------------------
