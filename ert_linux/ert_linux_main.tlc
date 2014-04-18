@@ -29,6 +29,7 @@
   #include <semaphore.h>                 /* Semaphores library header file */
   #include <time.h>
   #include <stdlib.h>
+  #include <stdbool.h>
   #include <unistd.h>
   #include <sys/mman.h>                  /* For mlockall() */
   #include "%<modelName>.h"              /* Model's header file */
@@ -36,6 +37,11 @@
   %if extMode == 1
     #include "ext_work.h"                  /* External mode header file */
   %endif
+
+  #ifndef TRUE
+  #define TRUE true
+  #define FALSE false
+  #endif
 
   /*==================*
    * Required defines *
