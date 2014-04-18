@@ -122,6 +122,7 @@
 	%<modelName>_step%<i>();
 	sem_wait(&sub_rate[%<i>].sem);    /* sem_val = 0 */
       }
+      return NULL;
     }
   %endforeach
 %endfunction
