@@ -242,7 +242,7 @@
       (void *)(argv);
     %endif
 
-    CHECKE(mlockall(MCL_FUTURE));
+    CHECKE(mlockall(MCL_CURRENT | MCL_FUTURE));
 
     /* Initialize model */
     %<modelName>_initialize();
