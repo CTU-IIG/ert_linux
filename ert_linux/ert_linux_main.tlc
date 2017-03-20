@@ -136,7 +136,7 @@
    * This is the thread function of the base rate loop.
    * Fundamental sample time = %<fundamentalStepSize>s
    */
-  void * base_rate()
+  void * base_rate(void *param_unused)
   {
     %assign  sec = FEVAL("uint32", fundamentalStepSize)
     %assign nsec = FEVAL("uint32", (fundamentalStepSize - FEVAL("floor", fundamentalStepSize))*1000000000)
@@ -147,6 +147,8 @@
     int_T OverrunFlags[%<numSampleTimes>];
     int step_sem_value;
     int_T i;
+
+    (void)param_unused;
 
     %if extMode == 1
       %<SLibGenERTExtModeInit()>
@@ -219,6 +221,7 @@
       sem_post(&sub_rate[i].sem);
       sem_post(&sub_rate[i].sem);
     }
+    return NULL;
   }
 
   /**
