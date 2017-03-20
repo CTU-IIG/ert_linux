@@ -32,6 +32,7 @@
   #include <stdbool.h>
   #include <unistd.h>
   #include <sys/mman.h>                  /* For mlockall() */
+  #include <signal.h>
   #include "%<modelName>.h"              /* Model's header file */
   #include "rtwtypes.h"                  /* MathWorks types */
   %if extMode == 1
@@ -225,6 +226,14 @@
   }
 
   /**
+   * Signal handler for ABORT during simulation
+   */
+  void abort_signal_handler(int sig) {
+    fprintf(stderr, "Simulation aborted by pressing CTRL+C\n");
+    rtmSetStopRequested(%<modelName>_M, 1);
+  }
+
+  /**
    * This is the main function of the model.
    * Multirate - Multitasking case main file
    */
@@ -282,6 +291,9 @@
     %if extMode == 1
       /* External mode */
       CHECKE(sem_wait(&ext_mode_ready));
+
+      signal(SIGINT, abort_signal_handler); /* important for letting the destructor be called. */
+
       while(rtmGetErrorStatus(%<modelName>_M) == NULL && !rtmGetStopRequested(%<modelName>_M)) {
         rtExtModeOneStep(rtmGetRTWExtModeInfo(RT_MDL), NUMST, (boolean_T *)&rtmGetStopRequested(RT_MDL));
 	usleep(%<FEVAL("uint32", fundamentalStepSize * 1000000)>);
