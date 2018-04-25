@@ -1,6 +1,6 @@
 Minimalist Simulink Coder Target for Linux
 ============================================
-Authors: Michal Sojka <sojkam1@fel.cvut.cz>
+Authors: Michal Sojka <michal.sojka@cvut.cz>
          Lukas Hamacek <hamacl1@fel.cvut.cz>
 
 The aim of this target is to allow Simulink to generate code that
