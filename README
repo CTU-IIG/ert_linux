@@ -3,11 +3,6 @@ Minimalist Simulink Coder Target for Linux
 Authors: Michal Sojka <sojkam1@fel.cvut.cz>
          Lukas Hamacek <hamacl1@fel.cvut.cz>
 
-Copyright (C) 2009 - 2017
-         Department of Control Engineering
-         Faculty of Electrical Engineering
-         Czech Technical University in Prague
-
 The aim of this target is to allow Simulink to generate code that
 runs in real-time on Linux. This target tries to be minimalist in
 the sense that it reuses as much as possible from Simulink built-in
