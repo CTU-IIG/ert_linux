@@ -1,5 +1,6 @@
 Minimalist Simulink Coder Target for Linux
 ============================================
+
 Authors: Michal Sojka <michal.sojka@cvut.cz>
          Lukas Hamacek <hamacl1@fel.cvut.cz>
 
@@ -14,11 +15,11 @@ Installation
 
 In Matlab prompt execute:
 
-  cd <root>/ert_linux/ert_linux
-  ert_linux_setup
+    cd <root>/ert_linux/ert_linux
+    ert_linux_setup
 
 From now on, Code Generation pane of Simulink Model Configuration
-Parameters should offer ert_linux.tlc as System Target File (after
+Parameters should offer `ert_linux.tlc` as System Target File (after
 pressing "Browse...." button).
 
 Documentation
@@ -41,7 +42,7 @@ Development sources repository
 
   http://rtime.felk.cvut.cz/gitweb/ert_linux.git
 
-  git clone git://rtime.felk.cvut.cz/ert_linux.git
+    git clone git://rtime.felk.cvut.cz/ert_linux.git
 
 Note: This target was tested with Matlab R2012b and R2013a
       and Humusoft MF624 cards with Linux kernels up to 3.12 RT
