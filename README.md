@@ -40,9 +40,8 @@ http://rtime.felk.cvut.cz/~sojka/blog/on-generating-linux-applications-from-simu
 Development sources repository
 ------------------------------
 
-  http://rtime.felk.cvut.cz/gitweb/ert_linux.git
-
-    git clone git://rtime.felk.cvut.cz/ert_linux.git
+Newest version of this project can be found at
+https://github.com/CTU-IIG/ert_linux
 
 Note: This target was tested with Matlab R2012b and R2013a
       and Humusoft MF624 cards with Linux kernels up to 3.12 RT
