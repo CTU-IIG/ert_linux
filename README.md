@@ -1,3 +1,6 @@
+**This project is no longer maintained here! Maintenance continues at
+https://github.com/aa4cc/ert_linux.**
+
 Minimalist Simulink Coder Target for Linux
 ============================================
 
@@ -34,14 +37,14 @@ for C++ compiler). For example:
 Pointers to more ERT Linux target documentation can be found at the
 project SourceForge page http://lintarget.sourceforge.net/.
 
-Michal Sojka's blogpost about the actual version can be found at
+Michal Sojka's blogpost about an older version can be found at
 http://rtime.felk.cvut.cz/~sojka/blog/on-generating-linux-applications-from-simulink/.
 
 Development sources repository
 ------------------------------
 
 Newest version of this project can be found at
-https://github.com/CTU-IIG/ert_linux
+https://github.com/aa4cc/ert_linux
 
 Note: This target was tested with Matlab R2012b and R2013a
       and Humusoft MF624 cards with Linux kernels up to 3.12 RT
